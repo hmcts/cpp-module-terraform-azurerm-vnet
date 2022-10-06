@@ -1,71 +1,266 @@
-# terraform-module-template
+# cpp-module-terraform-azurerm-vnet
 
-<!-- TODO fill in resource name in link to product documentation -->
-Terraform module for [Resource name](https://example.com).
+[![Build Status](https://travis-ci.org/Azure/terraform-azurerm-vnet.svg?branch=master)](https://travis-ci.org/Azure/terraform-azurerm-vnet)
 
-## Example
+## Create a basic virtual network in Azure
 
-<!-- todo update module name
+This Terraform module deploys a Virtual Network in Azure with a subnet or a set of subnets passed in as input parameters.
+
+The module does not create nor expose a security group. This would need to be defined separately as additional security rules on subnets in the deployed network.
+
+## Usage in Terraform 0.13
+
 ```hcl
-module "todo_resource_name" {
-  source = "git@github.com:hmcts/terraform-module-postgresql-flexible?ref=master"
-  ...
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_resource_group" "example" {
+  name     = "my-resources"
+  location = "West Europe"
+}
+
+module "vnet" {
+  source              = "git::https://github.com/hmcts/cpp-module-terraform-azurerm-vnet.git"
+  resource_group_name = azurerm_resource_group.example.name
+  address_space       = ["10.0.0.0/16"]
+  subnet_prefixes     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  subnet_names        = ["subnet1", "subnet2", "subnet3"]
+
+  subnet_service_endpoints = {
+    subnet2 = ["Microsoft.Storage", "Microsoft.Sql"],
+    subnet3 = ["Microsoft.AzureActiveDirectory"]
+  }
+
+  tags = {
+    environment = "dev"
+    costcenter  = "it"
+  }
+
+  depends_on = [azurerm_resource_group.example]
+}
+```
+
+## Usage in Terraform 0.12
+
+```hcl
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_resource_group" "example" {
+  name     = "my-resources"
+  location = "West Europe"
+}
+
+module "vnet" {
+  source              = "Azure/vnet/azurerm"
+  resource_group_name = azurerm_resource_group.example.name
+  vnet_location       = "East US"
+  address_space       = ["10.0.0.0/16"]
+  subnet_prefixes     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  subnet_names        = ["subnet1", "subnet2", "subnet3"]
+
+  tags = {
+    environment = "dev"
+    costcenter  = "it"
+  }
+}
+```
+
+## Example adding a network security rule for SSH
+
+```hcl
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_resource_group" "example" {
+  name     = "my-resources"
+  location = "West Europe"
+}
+
+module "vnet" {
+  source              = "Azure/vnet/azurerm"
+  resource_group_name = azurerm_resource_group.example.name
+  address_space       = ["10.0.0.0/16"]
+  subnet_prefixes     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  subnet_names        = ["subnet1", "subnet2", "subnet3"]
+
+  nsg_ids = {
+    subnet1 = azurerm_network_security_group.ssh.id
+    subnet2 = azurerm_network_security_group.ssh.id
+    subnet3 = azurerm_network_security_group.ssh.id
+  }
+
+
+  tags = {
+    environment = "dev"
+    costcenter  = "it"
+  }
+}
+
+resource "azurerm_network_security_group" "ssh" {
+  name                = "ssh"
+  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.example.location
+
+  security_rule {
+    name                       = "test123"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+}
+```
+
+## Example adding a route table
+
+```hcl
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_resource_group" "example" {
+  name     = "my-resources"
+  location = "West Europe"
+}
+
+module "vnet" {
+  source              = "Azure/vnet/azurerm"
+  resource_group_name = azurerm_resource_group.example.name
+  address_space       = ["10.0.0.0/16"]
+  subnet_prefixes     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  subnet_names        = ["subnet1", "subnet2", "subnet3"]
+
+  route_tables_ids = {
+    subnet1 = azurerm_route_table.example.id
+    subnet2 = azurerm_route_table.example.id
+    subnet3 = azurerm_route_table.example.id
+  }
+
+
+  tags = {
+    environment = "dev"
+    costcenter  = "it"
+  }
+}
+
+resource "azurerm_route_table" "example" {
+  name                = "MyRouteTable"
+  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.example.location
+}
+
+resource "azurerm_route" "example" {
+  name                = "acceptanceTestRoute1"
+  resource_group_name = azurerm_resource_group.example.name
+  route_table_name    = azurerm_route_table.example.name
+  address_prefix      = "10.1.0.0/16"
+  next_hop_type       = "vnetlocal"
 }
 
 ```
 
-<!-- BEGIN_TF_DOCS -->
-## Requirements
+## Example configuring private link endpoint network policy
 
-| Name | Version |
-|------|---------|
-| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | >= 3.7.0 |
+```hcl
+module "vnet" {
+  source              = "Azure/vnet/azurerm"
+  resource_group_name = azurerm_resource_group.example.name
+  address_space       = ["10.0.0.0/16"]
+  subnet_prefixes     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  subnet_names        = ["subnet1", "subnet2", "subnet3"]
 
-## Providers
+  subnet_service_endpoints = {
+    subnet2 = ["Microsoft.Storage", "Microsoft.Sql"],
+    subnet3 = ["Microsoft.AzureActiveDirectory"]
+  }
 
-| Name | Version |
-|------|---------|
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | >= 3.7.0 |
+  subnet_enforce_private_link_endpoint_network_policies = {
+    "subnet2" = true,
+    "subnet3" = true
+  }
 
-## Resources
+  tags = {
+    environment = "dev"
+    costcenter  = "it"
+  }
 
-| Name | Type |
-|------|------|
-| [azurerm_resource_group.rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) | resource |
-| [azurerm_subscription.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/subscription) | data source |
-
-## Inputs
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_common_tags"></a> [common\_tags](#input\_common\_tags) | Common tag to be applied to resources. | `map(string)` | n/a | yes |
-| <a name="input_component"></a> [component](#input\_component) | https://hmcts.github.io/glossary/#component | `string` | n/a | yes |
-| <a name="input_env"></a> [env](#input\_env) | Environment value. | `string` | n/a | yes |
-| <a name="input_existing_resource_group_name"></a> [existing\_resource\_group\_name](#input\_existing\_resource\_group\_name) | Name of existing resource group to deploy resources into | `string` | `null` | no |
-| <a name="input_location"></a> [location](#input\_location) | Target Azure location to deploy the resource | `string` | `"UK South"` | no |
-| <a name="input_name"></a> [name](#input\_name) | The default name will be product+component+env, you can override the product+component part by setting this | `string` | `""` | no |
-| <a name="input_product"></a> [product](#input\_product) | https://hmcts.github.io/glossary/#product | `string` | n/a | yes |
-| <a name="input_project"></a> [project](#input\_project) | Project name - sds or cft. | `any` | n/a | yes |
-
-## Outputs
-
-| Name | Description |
-|------|-------------|
-| <a name="output_resource_group_location"></a> [resource\_group\_location](#output\_resource\_group\_location) | n/a |
-| <a name="output_resource_group_name"></a> [resource\_group\_name](#output\_resource\_group\_name) | n/a |
-<!-- END_TF_DOCS -->
-
-## Contributing
-
-We use pre-commit hooks for validating the terraform format and maintaining the documentation automatically.
-Install it with:
-
-```shell
-$ brew install pre-commit terraform-docs
-$ pre-commit install
+  depends_on = [azurerm_resource_group.example]
+}
 ```
 
-If you add a new hook make sure to run it against all files:
-```shell
-$ pre-commit run --all-files
+## Example configuring private link service network policy
+
+```hcl
+module "vnet" {
+  source              = "Azure/vnet/azurerm"
+  resource_group_name = azurerm_resource_group.example.name
+  address_space       = ["10.0.0.0/16"]
+  subnet_prefixes     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  subnet_names        = ["subnet1", "subnet2", "subnet3"]
+
+  subnet_service_endpoints = {
+    subnet2 = ["Microsoft.Storage", "Microsoft.Sql"],
+    subnet3 = ["Microsoft.AzureActiveDirectory"]
+  }
+
+  subnet_enforce_private_link_service_network_policies = {
+    "subnet3" = true
+  }
+
+  tags = {
+    environment = "dev"
+    costcenter  = "it"
+  }
+
+  depends_on = [azurerm_resource_group.example]
+}
 ```
+
+## Test
+
+### Configurations
+
+- [Configure Terraform for Azure](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/terraform-install-configure)
+
+We provide 2 ways to build, run, and test the module on a local development machine.  [Native (Mac/Linux)](#native-maclinux) or [Docker](#docker).
+
+### Native (Mac/Linux)
+
+#### Prerequisites
+
+- [Ruby **(~> 2.3)**](https://www.ruby-lang.org/en/downloads/)
+- [Bundler **(~> 1.15)**](https://bundler.io/)
+- [Terraform **(~> 0.11.7)**](https://www.terraform.io/downloads.html)
+- [Golang **(~> 1.10.3)**](https://golang.org/dl/)
+
+#### Environment setup
+
+We provide simple script to quickly set up module development environment:
+
+```sh
+$ curl -sSL https://raw.githubusercontent.com/Azure/terramodtest/master/tool/env_setup.sh | sudo bash
+```
+
+#### Run test
+
+Then simply run it in local shell:
+
+```sh
+$ cd $GOPATH/src/{directory_name}/
+$ bundle install
+$ rake build
+$ rake full
+```
+
+## License
+
+[MIT](LICENSE)
