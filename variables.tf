@@ -75,7 +75,6 @@ variable "route_tables_ids" {
 variable "tags" {
   description = "The tags to associate with your network and subnets."
   type        = map(string)
-
   default = {
     ENV = "test"
   }
