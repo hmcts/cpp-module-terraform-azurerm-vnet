@@ -72,6 +72,3 @@ module "vnet" {
 
   depends_on = [azurerm_resource_group.test]
 }
-
-
-
