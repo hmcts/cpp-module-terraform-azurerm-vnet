@@ -15,7 +15,7 @@ variable "address_space" {
   default     = ["10.0.0.0/16"]
 }
 
-# If no values specified, this defaults to Azure DNS 
+# If no values specified, this defaults to Azure DNS
 variable "dns_servers" {
   description = "The DNS servers to be used with vNet."
   type        = list(string)
@@ -61,7 +61,6 @@ variable "subnet_delegation" {
 variable "nsg_ids" {
   description = "A map of subnet name to Network Security Group IDs"
   type        = map(string)
-
   default = {
   }
 }
