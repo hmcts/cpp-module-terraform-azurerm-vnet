@@ -12,7 +12,7 @@ variable "resource_group_name" {
 variable "address_space" {
   type        = list(string)
   description = "The address space that is used by the virtual network."
-  default     = ["10.0.0.0/16"]
+  default     = []
 }
 
 # If no values specified, this defaults to Azure DNS
@@ -25,13 +25,13 @@ variable "dns_servers" {
 variable "subnet_prefixes" {
   description = "The address prefix to use for the subnet."
   type        = list(string)
-  default     = ["10.0.1.0/24"]
+  default     = []
 }
 
 variable "subnet_names" {
   description = "A list of public subnets inside the vNet."
   type        = list(string)
-  default     = ["subnet1", "subnet2", "subnet3"]
+  default     = []
 }
 
 variable "subnet_service_endpoints" {

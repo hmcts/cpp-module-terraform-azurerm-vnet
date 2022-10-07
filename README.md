@@ -1,7 +1,5 @@
 # cpp-module-terraform-azurerm-vnet
 
-[![Build Status](https://travis-ci.org/Azure/terraform-azurerm-vnet.svg?branch=master)](https://travis-ci.org/Azure/terraform-azurerm-vnet)
-
 ## Create a basic virtual network in Azure
 
 This Terraform module deploys a Virtual Network in Azure with a subnet or a set of subnets passed in as input parameters.
