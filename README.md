@@ -223,42 +223,6 @@ module "vnet" {
 }
 ```
 
-## Test
-
-### Configurations
-
-- [Configure Terraform for Azure](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/terraform-install-configure)
-
-We provide 2 ways to build, run, and test the module on a local development machine.  [Native (Mac/Linux)](#native-maclinux) or [Docker](#docker).
-
-### Native (Mac/Linux)
-
-#### Prerequisites
-
-- [Ruby **(~> 2.3)**](https://www.ruby-lang.org/en/downloads/)
-- [Bundler **(~> 1.15)**](https://bundler.io/)
-- [Terraform **(~> 0.11.7)**](https://www.terraform.io/downloads.html)
-- [Golang **(~> 1.10.3)**](https://golang.org/dl/)
-
-#### Environment setup
-
-We provide simple script to quickly set up module development environment:
-
-```sh
-$ curl -sSL https://raw.githubusercontent.com/Azure/terramodtest/master/tool/env_setup.sh | sudo bash
-```
-
-#### Run test
-
-Then simply run it in local shell:
-
-```sh
-$ cd $GOPATH/src/{directory_name}/
-$ bundle install
-$ rake build
-$ rake full
-```
-
 ## License
 
 [MIT](LICENSE)
