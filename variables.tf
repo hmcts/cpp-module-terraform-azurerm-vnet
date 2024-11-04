@@ -42,7 +42,7 @@ variable "subnet_service_endpoints" {
 
 variable "subnet_enforce_private_link_endpoint_network_policies" {
   description = "A map of subnet name to enable/disable private link endpoint network policies on the subnet."
-  type        = map(bool)
+  type        = map(string)
   default     = {}
 }
 
