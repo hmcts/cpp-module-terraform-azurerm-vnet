@@ -19,6 +19,11 @@ resource "azurerm_virtual_network" "vnet" {
       id     = ddos_protection_plan.value.id
     }
   }
+  lifecycle {
+    ignore_changes = [
+      location
+    ]
+  }
 }
 
 resource "azurerm_subnet" "subnet" {
